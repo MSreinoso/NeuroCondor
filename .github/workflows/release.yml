@@ -22,7 +22,7 @@ jobs:
       - run: flutter pub get
       - run: flutter test
       - run: flutter build apk --release
-      - run: flutter build web --release --base-href /neuro-condor/
+      - run: flutter build web --release
 
       - name: Preparar archivos
         run: |
