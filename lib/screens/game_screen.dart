@@ -99,6 +99,8 @@ class _GameScreenState extends State<GameScreen> {
         appBar: AppBar(
           title: Text(
             '${widget.level.id == 0 ? '' : 'Nivel ${widget.level.id} · '}${widget.level.title}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         body: AnimatedBuilder(
@@ -207,27 +209,40 @@ class _GameScreenState extends State<GameScreen> {
                           textAlign: TextAlign.center,
                         )
                       else if (widget.ble.isDemoMode)
-                        Row(
-                          children: [
-                            Expanded(
-                              child: FilledButton.tonalIcon(
-                                onPressed: () => widget.ble
-                                    .emitDemoPin(DigitalPinState.active),
-                                icon: const Icon(Icons.toggle_on_outlined),
-                                label: const Text('Simular pin 1'),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final pinOne = FilledButton.tonalIcon(
+                              onPressed: () => widget.ble.emitDemoPin(
+                                DigitalPinState.active,
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: FilledButton.tonalIcon(
-                                onPressed: () => widget.ble.emitDemoPin(
-                                  DigitalPinState.inactive,
-                                ),
-                                icon: const Icon(Icons.toggle_off_outlined),
-                                label: const Text('Simular pin 0'),
+                              icon: const Icon(Icons.toggle_on_outlined),
+                              label: const Text('Simular pin 1'),
+                            );
+                            final pinZero = FilledButton.tonalIcon(
+                              onPressed: () => widget.ble.emitDemoPin(
+                                DigitalPinState.inactive,
                               ),
-                            ),
-                          ],
+                              icon: const Icon(Icons.toggle_off_outlined),
+                              label: const Text('Simular pin 0'),
+                            );
+                            if (constraints.maxWidth < 360) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  pinOne,
+                                  const SizedBox(height: 8),
+                                  pinZero,
+                                ],
+                              );
+                            }
+                            return Row(
+                              children: [
+                                Expanded(child: pinOne),
+                                const SizedBox(width: 10),
+                                Expanded(child: pinZero),
+                              ],
+                            );
+                          },
                         )
                       else
                         const Text(

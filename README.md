@@ -9,8 +9,11 @@ Base funcional de un juego móvil offline de rehabilitación neurológica para A
 - economía local con recompensas por nivel, saldo visible y compras con monedas;
 - tienda con inventario persistente, requisitos de progreso y selección de avatar;
 - 8 aves representativas de la Sierra, Costa, Amazonía y Galápagos;
-- personajes vectoriales rediseñados con rasgos propios de cada especie;
+- personajes vectoriales con anatomía, silueta y marcas reales propias de cada
+  especie ecuatoriana;
 - vuelo animado con aleteo, inclinación, estelas y reacción al aterrizaje;
+- interfaz responsiva comprobada desde 320 px de ancho, sin tarjetas, botones
+  ni pestañas superpuestas;
 - 3 niveles fáciles con plataformas, 3 medios con espinas y 3 difíciles con espinas y plataformas móviles;
 - cronómetro por partida y mejor tiempo local por nivel;
 - motor 2D propio con carga, salto, gravedad, aterrizaje y colisiones;

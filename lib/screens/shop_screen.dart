@@ -112,111 +112,124 @@ class ShopScreen extends StatelessWidget {
         ),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-          sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 330,
-              mainAxisExtent: 292,
-              crossAxisSpacing: 14,
-              mainAxisSpacing: 14,
-            ),
-            delegate: SliverChildBuilderDelegate((context, index) {
-              final character = Character.values[index];
-              final owned = repository.isCharacterOwned(character);
-              final levelReady = repository.meetsCharacterLevel(character);
-              final selected =
-                  repository.profile?.selectedCharacter == character.name;
-              final affordable = balance >= character.price;
+          sliver: SliverLayoutBuilder(
+            builder: (context, constraints) => SliverGrid(
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 330,
+                mainAxisExtent: constraints.crossAxisExtent < 400 ? 336 : 312,
+                crossAxisSpacing: 14,
+                mainAxisSpacing: 14,
+              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final character = Character.values[index];
+                final owned = repository.isCharacterOwned(character);
+                final levelReady = repository.meetsCharacterLevel(character);
+                final selected =
+                    repository.profile?.selectedCharacter == character.name;
+                final affordable = balance >= character.price;
 
-              return Card(
-                clipBehavior: Clip.antiAlias,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          CharacterPortrait(
-                            character: character,
-                            size: 76,
-                            locked: !owned && !levelReady,
-                          ),
-                          const Spacer(),
-                          if (selected)
-                            const Chip(
-                              avatar: Icon(Icons.check_circle, size: 18),
-                              label: Text('En uso'),
-                            )
-                          else if (!owned)
-                            Chip(
-                              avatar: const Icon(Icons.toll_rounded, size: 18),
-                              label: Text('${character.price}'),
+                return Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CharacterPortrait(
+                              character: character,
+                              size: 76,
+                              locked: !owned && !levelReady,
                             ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        character.displayName,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                      Text(
-                        character.region,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Expanded(
-                        child: Text(
-                          character.description,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      SizedBox(
-                        width: double.infinity,
-                        child: owned
-                            ? OutlinedButton.icon(
-                                onPressed: selected
-                                    ? null
-                                    : () =>
-                                        repository.selectCharacter(character),
-                                icon: Icon(
-                                  selected ? Icons.check : Icons.flutter_dash,
-                                ),
-                                label: Text(
-                                  selected ? 'Seleccionado' : 'Usar personaje',
-                                ),
+                            const Spacer(),
+                            if (selected)
+                              const Chip(
+                                avatar: Icon(Icons.check_circle, size: 18),
+                                label: Text('En uso'),
                               )
-                            : FilledButton.icon(
-                                onPressed: levelReady && affordable
-                                    ? () => _purchase(context, character)
-                                    : null,
-                                icon: Icon(
-                                  !levelReady
-                                      ? Icons.lock_outline_rounded
-                                      : Icons.shopping_bag_outlined,
-                                ),
-                                label: Text(
-                                  !levelReady
-                                      ? 'Completa nivel ${character.requiredLevel}'
-                                      : affordable
-                                          ? 'Desbloquear'
-                                          : 'Faltan ${character.price - balance}',
-                                ),
+                            else if (!owned)
+                              Chip(
+                                avatar:
+                                    const Icon(Icons.toll_rounded, size: 18),
+                                label: Text('${character.price}'),
                               ),
-                      ),
-                    ],
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          character.displayName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                        Text(
+                          character.region,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Expanded(
+                          child: Text(
+                            character.description,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        SizedBox(
+                          width: double.infinity,
+                          child: owned
+                              ? OutlinedButton.icon(
+                                  onPressed: selected
+                                      ? null
+                                      : () =>
+                                          repository.selectCharacter(character),
+                                  icon: Icon(
+                                    selected ? Icons.check : Icons.flutter_dash,
+                                  ),
+                                  label: Text(
+                                    selected
+                                        ? 'Seleccionado'
+                                        : 'Usar personaje',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                )
+                              : FilledButton.icon(
+                                  onPressed: levelReady && affordable
+                                      ? () => _purchase(context, character)
+                                      : null,
+                                  icon: Icon(
+                                    !levelReady
+                                        ? Icons.lock_outline_rounded
+                                        : Icons.shopping_bag_outlined,
+                                  ),
+                                  label: Text(
+                                    !levelReady
+                                        ? 'Completa nivel ${character.requiredLevel}'
+                                        : affordable
+                                            ? 'Desbloquear'
+                                            : 'Faltan ${character.price - balance}',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            }, childCount: Character.values.length),
+                );
+              }, childCount: Character.values.length),
+            ),
           ),
         ),
       ],

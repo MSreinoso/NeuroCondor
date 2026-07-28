@@ -61,12 +61,16 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             SafeArea(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(
+                    MediaQuery.sizeOf(context).width < 360 ? 16 : 24,
+                  ),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 480),
                     child: Card(
                       child: Padding(
-                        padding: const EdgeInsets.all(28),
+                        padding: EdgeInsets.all(
+                          MediaQuery.sizeOf(context).width < 360 ? 20 : 28,
+                        ),
                         child: Column(
                           children: [
                             const CharacterPortrait(

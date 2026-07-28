@@ -46,9 +46,20 @@ class _HomeScreenState extends State<HomeScreen> {
         animation: Listenable.merge([widget.repository, widget.ble]),
         builder: (context, _) {
           final titles = ['Inicio', 'Ruta por Ecuador', 'Tienda de aves'];
+          final compactHeader = MediaQuery.sizeOf(context).width < 370;
           return Scaffold(
             appBar: AppBar(
-              title: Text(titles[currentTab]),
+              title: Text(
+                compactHeader
+                    ? switch (currentTab) {
+                        0 => 'Inicio',
+                        1 => 'Ruta',
+                        _ => 'Tienda',
+                      }
+                    : titles[currentTab],
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
               actions: [
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 9),
@@ -147,6 +158,40 @@ class _Dashboard extends StatelessWidget {
     final progress = repository.completedLevels / LevelConfig.levels.length;
     final isTutorial = nextLevel.id == 0;
 
+    Widget heroDetails(CrossAxisAlignment alignment) => Column(
+          crossAxisAlignment: alignment,
+          children: [
+            Text(
+              isTutorial ? 'Comienza tu viaje' : 'Nivel ${nextLevel.id}',
+              style: const TextStyle(
+                color: Color(0xffffd166),
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              nextLevel.title,
+              textAlign: alignment == CrossAxisAlignment.center
+                  ? TextAlign.center
+                  : TextAlign.start,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xffffd166),
+                foregroundColor: const Color(0xff1d302f),
+              ),
+              onPressed: onPlay,
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: Text(isTutorial ? 'Hacer tutorial' : 'Jugar ahora'),
+            ),
+          ],
+        );
+
     return ListView(
       key: const PageStorageKey('dashboard'),
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
@@ -180,70 +225,61 @@ class _Dashboard extends StatelessWidget {
               ),
             ],
           ),
-          child: Row(
-            children: [
-              CharacterPortrait(character: selected, size: 100),
-              const SizedBox(width: 18),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < 320) {
+                return Column(
                   children: [
-                    Text(
-                      isTutorial
-                          ? 'Comienza tu viaje'
-                          : 'Nivel ${nextLevel.id}',
-                      style: const TextStyle(
-                        color: Color(0xffffd166),
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      nextLevel.title,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                          ),
-                    ),
-                    const SizedBox(height: 12),
-                    FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xffffd166),
-                        foregroundColor: const Color(0xff1d302f),
-                      ),
-                      onPressed: onPlay,
-                      icon: const Icon(Icons.play_arrow_rounded),
-                      label: Text(
-                        isTutorial ? 'Hacer tutorial' : 'Jugar ahora',
-                      ),
-                    ),
+                    CharacterPortrait(character: selected, size: 94),
+                    const SizedBox(height: 14),
+                    heroDetails(CrossAxisAlignment.center),
                   ],
-                ),
-              ),
-            ],
+                );
+              }
+              return Row(
+                children: [
+                  CharacterPortrait(character: selected, size: 100),
+                  const SizedBox(width: 18),
+                  Expanded(
+                    child: heroDetails(CrossAxisAlignment.start),
+                  ),
+                ],
+              );
+            },
           ),
         ),
         const SizedBox(height: 18),
-        Row(
-          children: [
-            Expanded(
-              child: _MetricCard(
-                icon: Icons.local_fire_department_rounded,
-                value: '${repository.profile?.dailyStreak ?? 0}',
-                label: 'Días de racha',
-                color: const Color(0xffef6b4a),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MetricCard(
-                icon: Icons.flag_rounded,
-                value: '${repository.completedLevels}/9',
-                label: 'Niveles',
-                color: const Color(0xff0f8b72),
-              ),
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final streak = _MetricCard(
+              icon: Icons.local_fire_department_rounded,
+              value: '${repository.profile?.dailyStreak ?? 0}',
+              label: 'Días de racha',
+              color: const Color(0xffef6b4a),
+            );
+            final levels = _MetricCard(
+              icon: Icons.flag_rounded,
+              value: '${repository.completedLevels}/9',
+              label: 'Niveles',
+              color: const Color(0xff0f8b72),
+            );
+            if (constraints.maxWidth < 320) {
+              return Column(
+                children: [
+                  streak,
+                  const SizedBox(height: 10),
+                  levels,
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: streak),
+                const SizedBox(width: 12),
+                Expanded(child: levels),
+              ],
+            );
+          },
         ),
         const SizedBox(height: 24),
         Row(
