@@ -1,0 +1,163 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+
+import '../ble/condor_ble_service.dart';
+
+class BleScreen extends StatefulWidget {
+  const BleScreen({super.key, required this.ble});
+  final CondorBleService ble;
+
+  @override
+  State<BleScreen> createState() => _BleScreenState();
+}
+
+class _BleScreenState extends State<BleScreen> {
+  List<ScanResult> results = [];
+  bool busy = false;
+  String? error;
+
+  Future<void> scan() async {
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      results = await widget.ble.scan();
+    } catch (exception) {
+      error =
+          'No fue posible buscar dispositivos. Verifica Bluetooth y permisos.\n$exception';
+    }
+    if (mounted) setState(() => busy = false);
+  }
+
+  Future<void> connect(BluetoothDevice device) async {
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      await widget.ble.connect(device);
+      if (mounted) Navigator.pop(context);
+    } catch (exception) {
+      error = 'Falló la conexión: $exception';
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Control BLE')),
+        body: AnimatedBuilder(
+          animation: widget.ble,
+          builder: (context, _) => ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              if (widget.ble.isWebIos) ...[
+                Card(
+                  color: Theme.of(context).colorScheme.secondaryContainer,
+                  child: const Padding(
+                    padding: EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.info_outline_rounded),
+                            SizedBox(width: 9),
+                            Expanded(
+                              child: Text(
+                                'Versión web para iPhone',
+                                style: TextStyle(fontWeight: FontWeight.w900),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          'Safari no permite que una página web se conecte '
+                          'directamente al ESP32 por Bluetooth. El resto del '
+                          'juego funciona normalmente y puedes practicar con '
+                          'el modo demostración.',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              Card(
+                child: ListTile(
+                  leading: Icon(
+                    widget.ble.isConnected
+                        ? Icons.bluetooth_connected
+                        : Icons.bluetooth,
+                  ),
+                  title: Text(widget.ble.status),
+                  subtitle: const Text(
+                    'El ESP32 debe anunciarse como NeuroCondor-ESP32',
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (error != null)
+                Text(
+                  error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              for (final result in results)
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.memory),
+                    title: Text(
+                      result.advertisementData.advName.isEmpty
+                          ? 'NeuroCondor ESP32'
+                          : result.advertisementData.advName,
+                    ),
+                    subtitle: Text(
+                      '${result.rssi} dBm · ${result.device.remoteId.str}',
+                    ),
+                    trailing: FilledButton(
+                      onPressed: busy ? null : () => connect(result.device),
+                      child: const Text('Conectar'),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: busy || !widget.ble.canUseBle ? null : scan,
+                icon: const Icon(Icons.radar),
+                label: Text(
+                  !widget.ble.canUseBle
+                      ? 'Bluetooth no disponible en Safari'
+                      : busy
+                          ? 'Buscando…'
+                          : 'Buscar ESP32',
+                ),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: busy
+                    ? null
+                    : () {
+                        widget.ble.enableDemoMode();
+                        Navigator.pop(context);
+                      },
+                icon: const Icon(Icons.science_outlined),
+                label: Text(
+                  widget.ble.isWebIos
+                      ? 'Continuar en modo demostración'
+                      : 'Usar modo demostración',
+                ),
+              ),
+              if (widget.ble.isConnected) ...[
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: widget.ble.disconnect,
+                  child: const Text('Desconectar'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+}

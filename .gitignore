@@ -1,0 +1,36 @@
+# Flutter y Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
+build/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Android
+android/.gradle/
+android/local.properties
+android/key.properties
+*.jks
+*.keystore
+
+# iOS y Linux generados
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/ephemeral/
+linux/flutter/ephemeral/
+
+# Entregables locales y publicación temporal
+*.apk
+*.ipa
+*.zip
+web_host/
+NeuroCondor-web-iphone/
+
+# Sistema
+.DS_Store
+Thumbs.db

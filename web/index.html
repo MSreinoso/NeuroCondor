@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta
+    name="description"
+    content="Neuro Cóndor: juego ecuatoriano de entrenamiento motor."
+  >
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+  >
+
+  <meta name="theme-color" content="#0e5966">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Neuro Cóndor">
+
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="manifest" href="manifest.json">
+
+  <title>Neuro Cóndor</title>
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #f7f2e7;
+    }
+
+    #loading {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 82% 15%, #ffd166 0 12%, transparent 12.5%),
+        linear-gradient(145deg, #0e5966, #173f4b);
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      text-align: center;
+      transition: opacity 220ms ease;
+    }
+
+    .loader-mark {
+      width: 78px;
+      height: 78px;
+      margin: 0 auto 18px;
+      border: 5px solid rgba(255, 255, 255, .3);
+      border-top-color: #ffd166;
+      border-radius: 50%;
+      animation: spin 900ms linear infinite;
+    }
+
+    .loader-title {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -.5px;
+    }
+
+    .loader-copy {
+      margin-top: 6px;
+      color: rgba(255, 255, 255, .75);
+      font-size: 14px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="loading" aria-live="polite">
+    <div>
+      <div class="loader-mark"></div>
+      <div class="loader-title">Neuro Cóndor</div>
+      <div class="loader-copy">Preparando tu viaje por Ecuador…</div>
+    </div>
+  </div>
+
+  <script src="flutter_bootstrap.js" async></script>
+  <script>
+    window.addEventListener("flutter-first-frame", function () {
+      const loading = document.getElementById("loading");
+      if (!loading) return;
+      loading.style.opacity = "0";
+      setTimeout(() => loading.remove(), 240);
+    });
+  </script>
+</body>
+</html>
