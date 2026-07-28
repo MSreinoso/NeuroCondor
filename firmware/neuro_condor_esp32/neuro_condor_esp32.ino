@@ -6,10 +6,10 @@
 // Use una etapa de potencia adecuada; no conecte motor ni válvulas
 // directamente a los GPIO del ESP32.
 
-constexpr uint8_t PIN_MOTOR_PRINCIPAL = 26;
-constexpr uint8_t PIN_VALVULA_INFLAR = 18;
-constexpr uint8_t PIN_VALVULA_DESINFLAR = 33;
-constexpr uint16_t INTERBLOQUEO_MS = 20;
+constexpr uint8_t PIN_MOTOR_PRINCIPAL = 27;
+constexpr uint8_t PIN_VALVULA_INFLAR = 25;
+constexpr uint8_t PIN_VALVULA_DESINFLAR = 32;
+constexpr uint16_t INTERBLOQUEO_MS = 35;
 
 constexpr char DEVICE_NAME[] = "ANTARA";
 constexpr char SERVICE_UUID[] = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";

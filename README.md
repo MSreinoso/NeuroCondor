@@ -69,12 +69,12 @@ acepta el comando sin salto porque elimina espacios antes de interpretarlo.
 
 | GPIO | Función |
 |---|---|
-| 26 | motor principal |
-| 18 | válvula de inflado |
-| 33 | válvula de desinflado |
+| 27 | motor principal |
+| 25 | válvula de inflado |
+| 32 | válvula de desinflado |
 
 Antes de cambiar entre inflado y desinflado, el firmware apaga todas las
-salidas durante 20 ms para impedir que las dos válvulas se activen a la vez.
+salidas durante 35 ms para impedir que las dos válvulas se activen a la vez.
 Al perder la conexión BLE, motor y válvulas quedan en `LOW`.
 
 El firmware usa `NimBLEDevice.h` y las firmas de callback de NimBLE-Arduino

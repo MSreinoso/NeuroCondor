@@ -22,4 +22,11 @@ void main() {
     expect(firmware, isNot(contains('V,1010111')));
     expect(firmware, isNot(contains('PINES_VIBRADORES')));
   });
+
+  test('firmware usa el cableado definitivo de ANTARA', () {
+    expect(firmware, contains('PIN_MOTOR_PRINCIPAL = 27'));
+    expect(firmware, contains('PIN_VALVULA_INFLAR = 25'));
+    expect(firmware, contains('PIN_VALVULA_DESINFLAR = 32'));
+    expect(firmware, contains('INTERBLOQUEO_MS = 35'));
+  });
 }
