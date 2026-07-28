@@ -19,16 +19,32 @@ class CondorBleService extends ChangeNotifier {
   bool get isConnected => _device?.isConnected ?? false;
   bool get isDemoMode => _demoMode;
   bool get isWebIos => kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
-  bool get canUseBle => !isWebIos;
+  bool get canUseBle => _canUseBle;
+  bool get bleCapabilityKnown => _bleCapabilityKnown;
+  bool get isWebBluetoothUnsupported =>
+      kIsWeb && _bleCapabilityKnown && !_canUseBle;
   bool _demoMode = false;
-  String status = 'Sin conectar';
+  bool _canUseBle = !kIsWeb;
+  bool _bleCapabilityKnown = !kIsWeb;
+  String status = kIsWeb ? 'Comprobando Bluetooth…' : 'Sin conectar';
+
+  Future<void> initialize() async {
+    if (!kIsWeb || _bleCapabilityKnown) return;
+    _canUseBle = await FlutterBluePlus.isSupported;
+    _bleCapabilityKnown = true;
+    status = _canUseBle
+        ? 'Bluetooth disponible'
+        : 'Web Bluetooth no disponible en este navegador';
+    notifyListeners();
+  }
 
   Future<List<ScanResult>> scan() async {
+    await initialize();
     if (!canUseBle) {
-      status = 'Bluetooth web no disponible en Safari';
+      status = 'Web Bluetooth no disponible en este navegador';
       notifyListeners();
       throw UnsupportedError(
-        'Safari en iPhone no admite Web Bluetooth. Usa el modo demostración.',
+        'Usa Chrome o Edge en PC/Android, o Bluefy en iPhone.',
       );
     }
     status = 'Buscando ESP32…';

@@ -52,15 +52,15 @@ class _BleScreenState extends State<BleScreen> {
           builder: (context, _) => ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              if (widget.ble.isWebIos) ...[
+              if (widget.ble.isWebBluetoothUnsupported) ...[
                 Card(
                   color: Theme.of(context).colorScheme.secondaryContainer,
-                  child: const Padding(
-                    padding: EdgeInsets.all(18),
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        const Row(
                           children: [
                             Icon(Icons.info_outline_rounded),
                             SizedBox(width: 9),
@@ -72,12 +72,16 @@ class _BleScreenState extends State<BleScreen> {
                             ),
                           ],
                         ),
-                        SizedBox(height: 10),
+                        const SizedBox(height: 10),
                         Text(
-                          'Safari no permite que una página web se conecte '
-                          'directamente al ESP32 por Bluetooth. El resto del '
-                          'juego funciona normalmente y puedes practicar con '
-                          'el modo demostración.',
+                          widget.ble.isWebIos
+                              ? 'Chrome y Safari para iPhone no ofrecen Web '
+                                  'Bluetooth. Instala Bluefy, abre allí la '
+                                  'dirección de Neuro Cóndor y pulsa Buscar '
+                                  'ESP32.'
+                              : 'Este navegador no ofrece Web Bluetooth. Abre '
+                                  'la aplicación con Chrome o Edge en una PC '
+                                  'con Bluetooth, usando la dirección HTTPS.',
                         ),
                       ],
                     ),
@@ -124,14 +128,20 @@ class _BleScreenState extends State<BleScreen> {
                 ),
               const SizedBox(height: 16),
               FilledButton.icon(
-                onPressed: busy || !widget.ble.canUseBle ? null : scan,
+                onPressed: busy ||
+                        !widget.ble.bleCapabilityKnown ||
+                        !widget.ble.canUseBle
+                    ? null
+                    : scan,
                 icon: const Icon(Icons.radar),
                 label: Text(
-                  !widget.ble.canUseBle
-                      ? 'Bluetooth no disponible en Safari'
-                      : busy
-                          ? 'Buscando…'
-                          : 'Buscar ESP32',
+                  !widget.ble.bleCapabilityKnown
+                      ? 'Comprobando Bluetooth…'
+                      : !widget.ble.canUseBle
+                          ? 'Bluetooth no disponible aquí'
+                          : busy
+                              ? 'Buscando…'
+                              : 'Buscar ESP32',
                 ),
               ),
               const SizedBox(height: 12),
@@ -144,8 +154,8 @@ class _BleScreenState extends State<BleScreen> {
                       },
                 icon: const Icon(Icons.science_outlined),
                 label: Text(
-                  widget.ble.isWebIos
-                      ? 'Continuar en modo demostración'
+                  widget.ble.isWebBluetoothUnsupported
+                      ? 'Continuar sin Bluetooth'
                       : 'Usar modo demostración',
                 ),
               ),

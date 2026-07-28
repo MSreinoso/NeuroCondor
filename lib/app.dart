@@ -19,7 +19,7 @@ class _NeuroCondorAppState extends State<NeuroCondorApp> {
   @override
   void initState() {
     super.initState();
-    if (ble.isWebIos) ble.enableDemoMode();
+    ble.initialize();
   }
 
   @override

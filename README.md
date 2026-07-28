@@ -29,21 +29,32 @@ flutter test
 flutter run
 ```
 
-## Versión web para iPhone
+## Versión web con Bluetooth
 
 La aplicación web se publica automáticamente con GitHub Pages desde la rama
-`main`. En iPhone se abre la dirección publicada con Safari y se selecciona
-**Compartir > Agregar a pantalla de inicio**.
+`main`. El mismo HTML funciona en PC, Android y iPhone.
 
-Safari no implementa Web Bluetooth, por lo que la edición web activa el modo
-demostración. La aplicación Android conserva la conexión BLE con el ESP32.
+- En Windows, macOS, Linux, ChromeOS y Android: abrir la dirección HTTPS con
+  Chrome o Edge y seleccionar **Buscar ESP32**.
+- En iPhone o iPad: Chrome y Safari no ofrecen Web Bluetooth. Instalar
+  [Bluefy](https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055),
+  abrir allí la dirección HTTPS y seleccionar **Buscar ESP32**.
+
+La aplicación comprueba la capacidad real del navegador, en lugar de bloquear
+Bluetooth por el tipo de dispositivo. Esto permite usar navegadores iOS que
+implementan Web Bluetooth.
 
 Al publicar una etiqueta con formato `v*`, GitHub Actions genera una versión
 descargable con el APK Android y el paquete web para iPhone.
 
 En iOS, abra `ios/Runner.xcworkspace` después de `pod install` si necesita configurar el equipo de firma. En Android, configure una clave de firma propia antes de publicar; el perfil `release` conserva la firma de depuración solo para facilitar el prototipo.
 
-La primera vez, abra el icono Bluetooth y conecte `NeuroCondor-ESP32`. Para desarrollo puede seleccionar **Usar modo demostración** y simular los estados 1 y 0 desde la pantalla del nivel. Esos botones existen solo como herramienta técnica: la ruta clínica usa exclusivamente el pin físico y BLE.
+La primera vez, abra el icono Bluetooth y conecte `NeuroCondor-ESP32`. La
+selección del dispositivo debe iniciarse con una pulsación del usuario y la
+página debe usar HTTPS. Para desarrollo puede seleccionar **Usar modo
+demostración** y simular los estados 1 y 0 desde la pantalla del nivel. Esos
+botones existen solo como herramienta técnica: la ruta clínica usa
+exclusivamente el pin físico y BLE.
 
 ## Arquitectura
 

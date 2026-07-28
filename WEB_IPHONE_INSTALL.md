@@ -13,7 +13,7 @@ dirección web.
 Se puede utilizar cualquier alojamiento estático con HTTPS. Al subir la
 carpeta, `index.html` debe quedar en la raíz de la dirección publicada.
 
-## Instalar desde Safari
+## Instalar como acceso directo
 
 1. Abrir en **Safari** la dirección HTTPS donde se publicó la aplicación.
 2. Tocar el botón **Compartir**.
@@ -27,13 +27,20 @@ elimina este progreso.
 
 ## Bluetooth en iPhone
 
-Safari para iPhone no implementa Web Bluetooth. La edición HTML activa
-automáticamente el modo demostración y muestra los controles **Simular pin 1**
-y **Simular pin 0** durante la partida.
+Chrome y Safari para iPhone no implementan Web Bluetooth. Para conectar el
+ESP32 desde el mismo HTML:
 
-La conexión directa con el ESP32 continúa disponible en:
+1. instalar
+   [Bluefy](https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055);
+2. activar Bluetooth en el iPhone y encender `NeuroCondor-ESP32`;
+3. abrir en Bluefy la dirección HTTPS publicada;
+4. tocar el icono Bluetooth, **Buscar ESP32** y aceptar el permiso.
 
-- la aplicación Android;
-- la aplicación iOS nativa compilada con Xcode;
-- navegadores compatibles con Web Bluetooth, como Chrome o Edge en plataformas
-  que exponen esa función.
+La aplicación comprueba si el navegador expone Web Bluetooth. Si no está
+disponible, mantiene el modo demostración como alternativa.
+
+## Bluetooth en PC y Android
+
+Abrir la misma dirección HTTPS en Chrome o Edge, activar Bluetooth y pulsar
+**Buscar ESP32**. Chrome admite la conexión desde páginas web en computadoras
+y Android. El navegador solicitará seleccionar y autorizar el dispositivo.
