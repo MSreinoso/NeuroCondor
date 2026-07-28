@@ -11,13 +11,14 @@ void main() {
   test('app y firmware comparten los UUID de ANTARA', () {
     expect(firmware, contains(CondorBleService.serviceUuid.str));
     expect(firmware, contains(CondorBleService.mirrorRxUuid.str));
+    expect(firmware, contains(CondorBleService.mirrorTxUuid.str));
     expect(firmware, contains('"ANTARA"'));
   });
 
   test('firmware conserva únicamente el modo espejo', () {
-    for (final command in ['M,0', 'M,1', 'M,2']) {
-      expect(firmware, contains(command));
-    }
+    expect(firmware, contains('M,2'));
+    expect(firmware, isNot(contains('comando == "M,0"')));
+    expect(firmware, isNot(contains('comando == "M,1"')));
     expect(firmware, isNot(contains('procesarAutomatico')));
     expect(firmware, isNot(contains('V,1010111')));
     expect(firmware, isNot(contains('PINES_VIBRADORES')));
@@ -27,6 +28,8 @@ void main() {
     expect(firmware, contains('PIN_MOTOR_PRINCIPAL = 27'));
     expect(firmware, contains('PIN_VALVULA_INFLAR = 25'));
     expect(firmware, contains('PIN_VALVULA_DESINFLAR = 32'));
-    expect(firmware, contains('INTERBLOQUEO_MS = 35'));
+    expect(firmware, contains('PIN_CONTROL = 35'));
+    expect(firmware, contains('pinMode(PIN_CONTROL, INPUT)'));
+    expect(firmware, contains('ANTIRREBOTE_MS = 35'));
   });
 }

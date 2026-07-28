@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 import '../ble/condor_ble_service.dart';
-import '../ble/mirror_protocol.dart';
 
 class BleScreen extends StatefulWidget {
   const BleScreen({super.key, required this.ble});
@@ -44,15 +43,15 @@ class _BleScreenState extends State<BleScreen> {
     if (mounted) setState(() => busy = false);
   }
 
-  Future<void> send(MirrorHandState state) async {
+  Future<void> stop() async {
     setState(() {
       busy = true;
       error = null;
     });
     try {
-      await widget.ble.sendMirrorState(state);
+      await widget.ble.stopMirror();
     } catch (exception) {
-      error = 'No se pudo enviar ${state.command}: $exception';
+      error = 'No se pudo ejecutar la parada segura: $exception';
     }
     if (mounted) setState(() => busy = false);
   }
@@ -133,7 +132,7 @@ class _BleScreenState extends State<BleScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          'Prueba del modo espejo',
+                          'Entrada física de modo espejo',
                           style: Theme.of(context)
                               .textTheme
                               .titleMedium
@@ -141,27 +140,12 @@ class _BleScreenState extends State<BleScreen> {
                         ),
                         const SizedBox(height: 6),
                         const Text(
-                          'Abrir infla el guante; cerrar lo desinfla. La parada '
-                          'apaga motor y válvulas.',
+                          'GPIO 35 en 1 abre el guante y carga el salto. En 0 '
+                          'cierra el guante y libera el vuelo.',
                         ),
                         const SizedBox(height: 14),
-                        FilledButton.icon(
-                          onPressed:
-                              busy ? null : () => send(MirrorHandState.open),
-                          icon: const Icon(Icons.pan_tool_outlined),
-                          label: const Text('Abrir mano · M,0'),
-                        ),
-                        const SizedBox(height: 9),
-                        FilledButton.tonalIcon(
-                          onPressed:
-                              busy ? null : () => send(MirrorHandState.closed),
-                          icon: const Icon(Icons.front_hand_outlined),
-                          label: const Text('Cerrar mano · M,1'),
-                        ),
-                        const SizedBox(height: 9),
                         OutlinedButton.icon(
-                          onPressed:
-                              busy ? null : () => send(MirrorHandState.stopped),
+                          onPressed: busy ? null : stop,
                           icon: const Icon(Icons.stop_circle_outlined),
                           label: const Text('Parada segura · M,2'),
                         ),

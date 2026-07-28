@@ -9,15 +9,19 @@ import 'mirror_protocol.dart';
 class CondorBleService extends ChangeNotifier {
   static final serviceUuid = Guid('6e400001-b5a3-f393-e0a9-e50e24dcca9e');
   static final mirrorRxUuid = Guid('6e400002-b5a3-f393-e0a9-e50e24dcca9e');
+  static final mirrorTxUuid = Guid('6e400003-b5a3-f393-e0a9-e50e24dcca9e');
 
   final _mirrorEvents = StreamController<MirrorHandState>.broadcast();
   StreamSubscription<BluetoothConnectionState>? _connectionSubscription;
-  BluetoothCharacteristic? _mirrorCharacteristic;
+  StreamSubscription<List<int>>? _controlSubscription;
+  BluetoothCharacteristic? _mirrorRx;
+  BluetoothCharacteristic? _mirrorTx;
   BluetoothDevice? _device;
+  String _receiveBuffer = '';
 
   Stream<MirrorHandState> get mirrorEvents => _mirrorEvents.stream;
   bool get isConnected =>
-      _device?.isConnected == true && _mirrorCharacteristic != null;
+      _device?.isConnected == true && _mirrorRx != null && _mirrorTx != null;
   bool get isWebIos => kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
   bool get canUseBle => _canUseBle;
   bool get bleCapabilityKnown => _bleCapabilityKnown;
@@ -83,30 +87,46 @@ class CondorBleService extends ChangeNotifier {
       await device.connect(timeout: const Duration(seconds: 12));
       final services = await device.discoverServices();
       final service = services.firstWhere((item) => item.uuid == serviceUuid);
-      final characteristic = service.characteristics.firstWhere(
+      final rx = service.characteristics.firstWhere(
         (item) => item.uuid == mirrorRxUuid,
       );
-      if (!characteristic.properties.write &&
-          !characteristic.properties.writeWithoutResponse) {
+      final tx = service.characteristics.firstWhere(
+        (item) => item.uuid == mirrorTxUuid,
+      );
+      if (!rx.properties.write && !rx.properties.writeWithoutResponse) {
         throw StateError('La característica ANTARA RX no admite escritura.');
+      }
+      if (!tx.properties.notify || !tx.properties.read) {
+        throw StateError('La característica ANTARA TX no admite read/notify.');
       }
 
       await _connectionSubscription?.cancel();
+      await _controlSubscription?.cancel();
       _device = device;
-      _mirrorCharacteristic = characteristic;
+      _mirrorRx = rx;
+      _mirrorTx = tx;
+      _receiveBuffer = '';
       mirrorState = MirrorHandState.stopped;
+
+      _controlSubscription = tx.onValueReceived.listen(_receiveControl);
+      await tx.setNotifyValue(true);
+      _receiveControl(await tx.read());
+
       _connectionSubscription = device.connectionState.listen((state) {
         if (state == BluetoothConnectionState.disconnected &&
             _device == device) {
+          unawaited(_controlSubscription?.cancel());
+          _controlSubscription = null;
           _device = null;
-          _mirrorCharacteristic = null;
-          mirrorState = MirrorHandState.stopped;
+          _mirrorRx = null;
+          _mirrorTx = null;
+          _receiveBuffer = '';
+          _publishState(MirrorHandState.stopped);
           status = 'ANTARA desconectado · actuadores detenidos';
-          _mirrorEvents.add(MirrorHandState.stopped);
           notifyListeners();
         }
       });
-      status = 'ANTARA conectado · modo espejo';
+      status = 'ANTARA conectado · GPIO 35 activo';
       notifyListeners();
     } catch (_) {
       await device.disconnect();
@@ -116,19 +136,19 @@ class CondorBleService extends ChangeNotifier {
     }
   }
 
-  Future<void> sendMirrorState(MirrorHandState state) async {
-    final characteristic = _mirrorCharacteristic;
-    if (!isConnected || characteristic == null) {
-      throw StateError('Conecta ANTARA antes de controlar el guante.');
+  void _receiveControl(List<int> bytes) {
+    _receiveBuffer += utf8.decode(bytes, allowMalformed: true);
+    while (true) {
+      final lineEnd = _receiveBuffer.indexOf('\n');
+      if (lineEnd < 0) break;
+      final line = _receiveBuffer.substring(0, lineEnd);
+      _receiveBuffer = _receiveBuffer.substring(lineEnd + 1);
+      final state = parseMirrorControl(line);
+      if (state != null) _publishState(state);
     }
+  }
 
-    final withoutResponse = characteristic.properties.writeWithoutResponse &&
-        !characteristic.properties.write;
-    await characteristic.write(
-      utf8.encode('${state.command}\n'),
-      withoutResponse: withoutResponse,
-    );
-
+  void _publishState(MirrorHandState state) {
     mirrorState = state;
     status = state.label;
     _mirrorEvents.add(state);
@@ -136,8 +156,15 @@ class CondorBleService extends ChangeNotifier {
   }
 
   Future<void> stopMirror() async {
-    if (!isConnected) return;
-    await sendMirrorState(MirrorHandState.stopped);
+    final characteristic = _mirrorRx;
+    if (!isConnected || characteristic == null) return;
+    final withoutResponse = characteristic.properties.writeWithoutResponse &&
+        !characteristic.properties.write;
+    await characteristic.write(
+      utf8.encode('M,2\n'),
+      withoutResponse: withoutResponse,
+    );
+    _publishState(MirrorHandState.stopped);
   }
 
   Future<void> disconnect() async {
@@ -146,11 +173,23 @@ class CondorBleService extends ChangeNotifier {
     } catch (_) {
       // La desconexión del ESP32 también apaga todas las salidas.
     }
+    final tx = _mirrorTx;
+    if (tx != null) {
+      try {
+        await tx.setNotifyValue(false);
+      } catch (_) {
+        // El enlace puede haberse cerrado antes de desactivar notify.
+      }
+    }
+    await _controlSubscription?.cancel();
+    _controlSubscription = null;
     await _connectionSubscription?.cancel();
     _connectionSubscription = null;
     final device = _device;
     _device = null;
-    _mirrorCharacteristic = null;
+    _mirrorRx = null;
+    _mirrorTx = null;
+    _receiveBuffer = '';
     mirrorState = MirrorHandState.stopped;
     await device?.disconnect();
     status = 'Sin conectar';
@@ -159,6 +198,7 @@ class CondorBleService extends ChangeNotifier {
 
   @override
   void dispose() {
+    _controlSubscription?.cancel();
     _connectionSubscription?.cancel();
     _mirrorEvents.close();
     super.dispose();

@@ -1,15 +1,15 @@
 enum MirrorHandState { stopped, open, closed }
 
-extension MirrorHandStateData on MirrorHandState {
-  String get command => switch (this) {
-        MirrorHandState.stopped => 'M,2',
-        MirrorHandState.open => 'M,0',
-        MirrorHandState.closed => 'M,1',
-      };
+MirrorHandState? parseMirrorControl(String value) => switch (value.trim()) {
+      '1' => MirrorHandState.open,
+      '0' => MirrorHandState.closed,
+      _ => null,
+    };
 
+extension MirrorHandStateData on MirrorHandState {
   String get label => switch (this) {
         MirrorHandState.stopped => 'Actuadores detenidos',
-        MirrorHandState.open => 'Mano abierta · inflando',
-        MirrorHandState.closed => 'Mano cerrada · desinflando',
+        MirrorHandState.open => 'Control 1 · mano abierta · cargando',
+        MirrorHandState.closed => 'Control 0 · mano cerrada · salto',
       };
 }

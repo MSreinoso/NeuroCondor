@@ -13,11 +13,10 @@ ANTARA por Bluetooth Low Energy. Esta edición utiliza exclusivamente el
 - vuelo animado con aleteo, inclinación, estelas y aterrizaje;
 - interfaz responsiva comprobada desde 320 px de ancho;
 - conexión BLE directa con el dispositivo `ANTARA`;
-- control neumático exclusivo mediante `M,0`, `M,1` y `M,2`;
+- lectura de la entrada física GPIO 35 y envío de sus estados por BLE;
 - parada segura al desconectar Bluetooth o salir de una partida.
 
-No contiene modo automático, estimulación vibratoria, lectura de un pin remoto
-ni modo de demostración.
+No contiene modo automático, estimulación vibratoria ni modo de demostración.
 
 ## Ejecutar y compilar
 
@@ -42,8 +41,8 @@ requiere un navegador que implemente Web Bluetooth, como Bluefy.
 2. Encender el controlador ANTARA y abrir Neuro Cóndor.
 3. Abrir el menú Bluetooth y pulsar **Buscar ANTARA**.
 4. Conectar el dispositivo encontrado.
-5. Verificar **Abrir mano**, **Cerrar mano** y **Parada segura**.
-6. En el juego, abrir la mano carga el vuelo y cerrarla hace saltar al ave.
+5. Poner GPIO 35 en `1`: el guante abre y la app carga el vuelo.
+6. Poner GPIO 35 en `0`: el guante cierra y el ave salta.
 
 ## Protocolo BLE ANTARA
 
@@ -52,18 +51,18 @@ Nombre anunciado: `ANTARA`
 | Elemento | UUID | Uso |
 |---|---|---|
 | Servicio | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | Servicio exclusivo de modo espejo |
-| RX | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | App → ESP32, write/write without response |
+| RX | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | App → ESP32, parada segura |
+| TX | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | ESP32 → app, estado GPIO 35 mediante read/notify |
 
-Comandos ASCII:
+Eventos ASCII enviados por el ESP32:
 
-| Comando | Resultado |
-|---|---|
-| `M,0` | abre la mano: infla el sistema neumático |
-| `M,1` | cierra la mano: desinfla el sistema neumático |
-| `M,2` | parada segura: apaga motor y ambas válvulas |
+| Evento | Guante | Juego |
+|---|---|---|
+| `1` | abre e infla | carga el salto |
+| `0` | cierra y desinfla | libera el salto |
 
-La app envía un salto de línea después de cada comando. El firmware también
-acepta el comando sin salto porque elimina espacios antes de interpretarlo.
+La app únicamente puede enviar `M,2` para ejecutar la parada segura. Cada
+mensaje termina en salto de línea.
 
 ## Pines del ESP32
 
@@ -72,10 +71,13 @@ acepta el comando sin salto porque elimina espacios antes de interpretarlo.
 | 27 | motor principal |
 | 25 | válvula de inflado |
 | 32 | válvula de desinflado |
+| 35 | entrada de control: `1` abre/carga; `0` cierra/salta |
 
 Antes de cambiar entre inflado y desinflado, el firmware apaga todas las
-salidas durante 35 ms para impedir que las dos válvulas se activen a la vez.
-Al perder la conexión BLE, motor y válvulas quedan en `LOW`.
+salidas durante 20 ms para impedir que las dos válvulas se activen a la vez.
+La entrada aplica 35 ms de antirrebote. GPIO 35 no tiene resistencia pull-up o
+pull-down interna: el circuito debe entregarle siempre un nivel definido de
+3.3 V o 0 V. Al perder BLE, motor y válvulas quedan en `LOW`.
 
 El firmware usa `NimBLEDevice.h` y las firmas de callback de NimBLE-Arduino
 2.x. Instale esa biblioteca desde el gestor de bibliotecas de Arduino IDE.

@@ -30,7 +30,6 @@ class _GameScreenState extends State<GameScreen> {
   late final GameEngine engine = GameEngine(widget.level);
   StreamSubscription<MirrorHandState>? mirrorSubscription;
   bool saving = false;
-  bool commandBusy = false;
   int? earnedCoins;
 
   @override
@@ -69,21 +68,6 @@ class _GameScreenState extends State<GameScreen> {
     engine.removeListener(onEngineChanged);
     engine.dispose();
     super.dispose();
-  }
-
-  Future<void> sendMirrorState(MirrorHandState state) async {
-    if (commandBusy) return;
-    setState(() => commandBusy = true);
-    try {
-      await widget.ble.sendMirrorState(state);
-    } catch (exception) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo controlar ANTARA: $exception')),
-      );
-    } finally {
-      if (mounted) setState(() => commandBusy = false);
-    }
   }
 
   @override
@@ -131,7 +115,7 @@ class _GameScreenState extends State<GameScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Text(
-                      'Abre la mano para cargar. Ciérrala para liberar el vuelo.',
+                      'GPIO 35 en 1 carga el vuelo. En 0 ejecuta el salto.',
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -196,44 +180,9 @@ class _GameScreenState extends State<GameScreen> {
                           onContinue: () => Navigator.pop(context),
                         )
                       else if (widget.ble.isConnected)
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            final open = FilledButton.tonalIcon(
-                              onPressed: commandBusy
-                                  ? null
-                                  : () => sendMirrorState(
-                                        MirrorHandState.open,
-                                      ),
-                              icon: const Icon(Icons.pan_tool_outlined),
-                              label: const Text('Abrir mano'),
-                            );
-                            final close = FilledButton.tonalIcon(
-                              onPressed: commandBusy
-                                  ? null
-                                  : () => sendMirrorState(
-                                        MirrorHandState.closed,
-                                      ),
-                              icon: const Icon(Icons.front_hand_outlined),
-                              label: const Text('Cerrar mano'),
-                            );
-                            if (constraints.maxWidth < 360) {
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  open,
-                                  const SizedBox(height: 8),
-                                  close,
-                                ],
-                              );
-                            }
-                            return Row(
-                              children: [
-                                Expanded(child: open),
-                                const SizedBox(width: 10),
-                                Expanded(child: close),
-                              ],
-                            );
-                          },
+                        const Text(
+                          'Control físico activo · usa la entrada GPIO 35',
+                          textAlign: TextAlign.center,
                         )
                       else
                         const Text(
