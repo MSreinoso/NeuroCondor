@@ -31,5 +31,8 @@ void main() {
     expect(firmware, contains('PIN_CONTROL = 35'));
     expect(firmware, contains('pinMode(PIN_CONTROL, INPUT)'));
     expect(firmware, contains('ANTIRREBOTE_MS = 35'));
+    expect(firmware, contains('REPORTE_BLE_MS = 250'));
+    expect(firmware, contains('GPIO 35 detectado:'));
+    expect(firmware, isNot(contains('if (!antaraConnected) return;')));
   });
 }

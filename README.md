@@ -62,7 +62,8 @@ Eventos ASCII enviados por el ESP32:
 | `0` | cierra y desinfla | libera el salto |
 
 La app únicamente puede enviar `M,2` para ejecutar la parada segura. Cada
-mensaje termina en salto de línea.
+mensaje termina en salto de línea. Mientras existe conexión, el ESP32 repite
+el estado cada 250 ms para recuperar cualquier notificación perdida.
 
 ## Pines del ESP32
 
@@ -78,6 +79,11 @@ salidas durante 20 ms para impedir que las dos válvulas se activen a la vez.
 La entrada aplica 35 ms de antirrebote. GPIO 35 no tiene resistencia pull-up o
 pull-down interna: el circuito debe entregarle siempre un nivel definido de
 3.3 V o 0 V. Al perder BLE, motor y válvulas quedan en `LOW`.
+
+Para diagnosticar la entrada, abra el Monitor Serie a 115200 baudios. Al
+cambiar el nivel deben aparecer `GPIO 35 detectado: 1/0` y, 35 ms después,
+`GPIO 35 estable: 1/0`. Si esos mensajes no cambian, revise masa común, nivel
+de 3.3 V, continuidad y la identificación física del GPIO.
 
 El firmware usa `NimBLEDevice.h` y las firmas de callback de NimBLE-Arduino
 2.x. Instale esa biblioteca desde el gestor de bibliotecas de Arduino IDE.

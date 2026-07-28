@@ -12,6 +12,7 @@ constexpr uint8_t PIN_VALVULA_DESINFLAR = 32;
 constexpr uint8_t PIN_CONTROL = 35;
 constexpr uint16_t INTERBLOQUEO_MS = 20;
 constexpr uint16_t ANTIRREBOTE_MS = 35;
+constexpr uint16_t REPORTE_BLE_MS = 250;
 
 constexpr char DEVICE_NAME[] = "ANTARA";
 constexpr char SERVICE_UUID[] = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
@@ -22,7 +23,9 @@ NimBLECharacteristic *mirrorTx = nullptr;
 bool antaraConnected = false;
 bool ultimoControlCrudo = false;
 bool controlEstable = false;
+bool controlArmado = false;
 uint32_t controlCambioEnMs = 0;
+uint32_t ultimoReporteBleEnMs = 0;
 
 void apagarSalidas() {
   digitalWrite(PIN_MOTOR_PRINCIPAL, LOW);
@@ -31,6 +34,7 @@ void apagarSalidas() {
 }
 
 void paradaSegura() {
+  controlArmado = false;
   apagarSalidas();
   Serial.println("M,2 -> parada segura");
 }
@@ -56,13 +60,15 @@ void cerrarMano() {
 
 void notificarControl() {
   if (mirrorTx == nullptr) return;
-  mirrorTx->setValue(controlEstable ? "1\n" : "0\n");
+  const char *mensaje =
+      !controlArmado ? "2\n" : (controlEstable ? "1\n" : "0\n");
+  mirrorTx->setValue(mensaje);
   if (antaraConnected) mirrorTx->notify();
+  ultimoReporteBleEnMs = millis();
 }
 
 void aplicarControl() {
-  if (!antaraConnected) return;
-
+  controlArmado = true;
   if (controlEstable) {
     abrirMano();
   } else {
@@ -76,12 +82,21 @@ void actualizarControl() {
   if (controlCrudo != ultimoControlCrudo) {
     ultimoControlCrudo = controlCrudo;
     controlCambioEnMs = millis();
+    Serial.print("GPIO 35 detectado: ");
+    Serial.println(controlCrudo ? 1 : 0);
   }
 
   if (controlCrudo != controlEstable &&
       millis() - controlCambioEnMs >= ANTIRREBOTE_MS) {
     controlEstable = controlCrudo;
+    Serial.print("GPIO 35 estable: ");
+    Serial.println(controlEstable ? 1 : 0);
     aplicarControl();
+  }
+
+  if (antaraConnected &&
+      millis() - ultimoReporteBleEnMs >= REPORTE_BLE_MS) {
+    notificarControl();
   }
 }
 
@@ -168,6 +183,8 @@ void setup() {
   ultimoControlCrudo = digitalRead(PIN_CONTROL) == HIGH;
   controlEstable = ultimoControlCrudo;
   controlCambioEnMs = millis();
+  Serial.print("GPIO 35 inicial: ");
+  Serial.println(controlEstable ? 1 : 0);
   iniciarBluetooth();
 }
 

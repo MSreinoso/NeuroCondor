@@ -3,6 +3,7 @@ enum MirrorHandState { stopped, open, closed }
 MirrorHandState? parseMirrorControl(String value) => switch (value.trim()) {
       '1' => MirrorHandState.open,
       '0' => MirrorHandState.closed,
+      '2' => MirrorHandState.stopped,
       _ => null,
     };
 
