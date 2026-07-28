@@ -44,7 +44,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('registro y controles de juego caben en 320 por 568',
+  testWidgets('registro y pantalla de juego caben en 320 por 568',
       (tester) async {
     usePhoneViewport(tester);
 
@@ -56,7 +56,7 @@ void main() {
     expect(tester.takeException(), isNull);
 
     final repository = await registeredRepository();
-    final ble = CondorBleService()..enableDemoMode();
+    final ble = CondorBleService();
     await tester.pumpWidget(
       MaterialApp(
         home: GameScreen(

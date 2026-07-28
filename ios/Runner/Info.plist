@@ -27,7 +27,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Se usa Bluetooth para recibir el estado del pin digital y coordinar el guante terapéutico.</string>
+	<string>Se usa Bluetooth para controlar el guante ANTARA mediante el modo espejo.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>Se usa Bluetooth para conectar el sistema Neuro Cóndor.</string>
 	<key>UIApplicationSceneManifest</key>

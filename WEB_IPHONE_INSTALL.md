@@ -32,15 +32,15 @@ ESP32 desde el mismo HTML:
 
 1. instalar
    [Bluefy](https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055);
-2. activar Bluetooth en el iPhone y encender `NeuroCondor-ESP32`;
+2. activar Bluetooth en el iPhone y encender `ANTARA`;
 3. abrir en Bluefy la dirección HTTPS publicada;
-4. tocar el icono Bluetooth, **Buscar ESP32** y aceptar el permiso.
+4. tocar el icono Bluetooth, **Buscar ANTARA** y aceptar el permiso.
 
-La aplicación comprueba si el navegador expone Web Bluetooth. Si no está
-disponible, mantiene el modo demostración como alternativa.
+La aplicación comprueba si el navegador expone Web Bluetooth. Sin esa función
+no es posible utilizar el modo espejo.
 
 ## Bluetooth en PC y Android
 
 Abrir la misma dirección HTTPS en Chrome o Edge, activar Bluetooth y pulsar
-**Buscar ESP32**. Chrome admite la conexión desde páginas web en computadoras
+**Buscar ANTARA**. Chrome admite la conexión desde páginas web en computadoras
 y Android. El navegador solicitará seleccionar y autorizar el dispositivo.

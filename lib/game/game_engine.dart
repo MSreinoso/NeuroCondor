@@ -3,7 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 
-import '../ble/ble_protocol.dart';
+import '../ble/mirror_protocol.dart';
 import '../models/level_config.dart';
 
 enum PlayState { ready, charging, flying, failed, completed }
@@ -29,7 +29,7 @@ class GameEngine extends ChangeNotifier {
   GameEngine(this.level);
 
   static const condorHeight = .065;
-  // Coincide con la apertura y la espera abierta del ciclo neumático.
+  // La potencia aumenta mientras la mano permanece abierta en modo espejo.
   static const maxCharge = Duration(seconds: 10);
   final LevelConfig level;
   final Stopwatch stopwatch = Stopwatch();
@@ -45,7 +45,7 @@ class GameEngine extends ChangeNotifier {
   double simulationTime = 0;
   int currentPlatform = 0;
   int streak = 0;
-  String hint = 'Activa el pin digital para cargar';
+  String hint = 'Abre la mano para cargar el vuelo';
   List<VisualEffect> activeEffects = [];
   bool _completionReported = false;
   bool get completionReported => _completionReported;
@@ -69,12 +69,17 @@ class GameEngine extends ChangeNotifier {
             platform.moveRange;
   }
 
-  void handleDigitalInput(DigitalPinState pinState) {
-    if (pinState == DigitalPinState.active && state == PlayState.ready) {
-      state = PlayState.charging;
-      hint = 'Pin activo · cargando…';
+  void handleMirrorState(MirrorHandState handState) {
+    if (handState == MirrorHandState.stopped && state == PlayState.charging) {
+      state = PlayState.ready;
+      charge = 0;
+      hint = 'Control detenido · abre la mano para cargar';
       notifyListeners();
-    } else if (pinState == DigitalPinState.inactive &&
+    } else if (handState == MirrorHandState.open && state == PlayState.ready) {
+      state = PlayState.charging;
+      hint = 'Mano abierta · cargando…';
+      notifyListeners();
+    } else if (handState == MirrorHandState.closed &&
         state == PlayState.charging) {
       _jump();
     }
@@ -181,11 +186,11 @@ class GameEngine extends ChangeNotifier {
   }
 
   String _getPositiveMessage(int streakCount) {
-    if (streakCount == 1) return '¡Bien hecho! Activa para continuar';
+    if (streakCount == 1) return '¡Bien hecho! Abre para continuar';
     if (streakCount == 2) return '¡Excelente! Mantén el ritmo 🔥';
     if (streakCount == 3) return '¡Imparable! Racha x3 🦅';
     if (streakCount >= 4) return '¡Modo Dios! Racha x$streakCount 🚀';
-    return 'Activa el pin para el siguiente salto';
+    return 'Abre la mano para el siguiente vuelo';
   }
 
   void _fail(String message) {
@@ -214,7 +219,7 @@ class GameEngine extends ChangeNotifier {
     charge = 0;
     streak = 0;
     state = PlayState.ready;
-    hint = 'Activa el pin digital para cargar';
+    hint = 'Abre la mano para cargar el vuelo';
     activeEffects.clear();
     _completionReported = false;
   }

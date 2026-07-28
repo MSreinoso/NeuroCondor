@@ -78,9 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon: Icon(
                     widget.ble.isConnected
                         ? Icons.bluetooth_connected_rounded
-                        : widget.ble.isDemoMode
-                            ? Icons.science_outlined
-                            : Icons.bluetooth_disabled_rounded,
+                        : Icons.bluetooth_disabled_rounded,
                   ),
                   onPressed: () => Navigator.push(
                     context,

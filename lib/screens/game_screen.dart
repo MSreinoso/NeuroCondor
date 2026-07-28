@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../ble/ble_protocol.dart';
 import '../ble/condor_ble_service.dart';
+import '../ble/mirror_protocol.dart';
 import '../data/local_progress_repository.dart';
 import '../game/game_engine.dart';
 import '../game/game_painter.dart';
@@ -28,35 +28,19 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> {
   late final GameEngine engine = GameEngine(widget.level);
-  StreamSubscription<DeviceEvent>? deviceSubscription;
-  GlovePhase glovePhase = GlovePhase.idleClosed;
-  int gloveSeconds = 0;
+  StreamSubscription<MirrorHandState>? mirrorSubscription;
   bool saving = false;
+  bool commandBusy = false;
   int? earnedCoins;
 
   @override
   void initState() {
     super.initState();
     engine.addListener(onEngineChanged);
-    deviceSubscription = widget.ble.events.listen(onDeviceEvent);
+    mirrorSubscription = widget.ble.mirrorEvents.listen(
+      engine.handleMirrorState,
+    );
     engine.start();
-  }
-
-  void onDeviceEvent(DeviceEvent event) {
-    if (event case DigitalPinEvent(:final state)) {
-      engine.handleDigitalInput(state);
-    }
-    if (event case GlovePhaseEvent(:final phase, :final secondsRemaining)) {
-      setState(() {
-        glovePhase = phase;
-        gloveSeconds = secondsRemaining;
-      });
-    }
-    if (event case DeviceFaultEvent(:final code)) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Alerta del ESP32: $code')));
-    }
   }
 
   void onEngineChanged() {
@@ -65,6 +49,7 @@ class _GameScreenState extends State<GameScreen> {
         !saving) {
       engine.markCompletionReported();
       saving = true;
+      unawaited(widget.ble.stopMirror());
       widget.repository.completeLevel(widget.level.id, engine.elapsed).then((
         reward,
       ) {
@@ -79,20 +64,27 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void dispose() {
-    deviceSubscription?.cancel();
+    unawaited(widget.ble.stopMirror());
+    mirrorSubscription?.cancel();
     engine.removeListener(onEngineChanged);
     engine.dispose();
     super.dispose();
   }
 
-  String get gloveLabel => switch (glovePhase) {
-        GlovePhase.opening => 'Guante abriendo',
-        GlovePhase.holdOpen => 'Espera abierto',
-        GlovePhase.readyOpen => 'Guante abierto · espera pin 0',
-        GlovePhase.closing => 'Guante cerrando',
-        GlovePhase.holdClosed => 'Espera cerrado',
-        GlovePhase.idleClosed => 'Guante listo',
-      };
+  Future<void> sendMirrorState(MirrorHandState state) async {
+    if (commandBusy) return;
+    setState(() => commandBusy = true);
+    try {
+      await widget.ble.sendMirrorState(state);
+    } catch (exception) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo controlar ANTARA: $exception')),
+      );
+    } finally {
+      if (mounted) setState(() => commandBusy = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -104,7 +96,7 @@ class _GameScreenState extends State<GameScreen> {
           ),
         ),
         body: AnimatedBuilder(
-          animation: engine,
+          animation: Listenable.merge([engine, widget.ble]),
           builder: (context, _) => SafeArea(
             child: Column(
               children: [
@@ -120,10 +112,10 @@ class _GameScreenState extends State<GameScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: _StatusChip(
-                          icon: Icons.input,
-                          text: gloveSeconds > 0
-                              ? '$gloveLabel · ${gloveSeconds}s'
-                              : gloveLabel,
+                          icon: Icons.back_hand_outlined,
+                          text: widget.ble.isConnected
+                              ? widget.ble.mirrorState.label
+                              : 'ANTARA sin conectar',
                         ),
                       ),
                     ],
@@ -139,7 +131,7 @@ class _GameScreenState extends State<GameScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Text(
-                      'Pin en 1: la barra carga. Pin en 0: el ave salta. No se necesita cámara.',
+                      'Abre la mano para cargar. Ciérrala para liberar el vuelo.',
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -204,49 +196,48 @@ class _GameScreenState extends State<GameScreen> {
                           onContinue: () => Navigator.pop(context),
                         )
                       else if (widget.ble.isConnected)
-                        const Text(
-                          'Control conectado · usa el pin digital del ESP32',
-                          textAlign: TextAlign.center,
-                        )
-                      else if (widget.ble.isDemoMode)
                         LayoutBuilder(
                           builder: (context, constraints) {
-                            final pinOne = FilledButton.tonalIcon(
-                              onPressed: () => widget.ble.emitDemoPin(
-                                DigitalPinState.active,
-                              ),
-                              icon: const Icon(Icons.toggle_on_outlined),
-                              label: const Text('Simular pin 1'),
+                            final open = FilledButton.tonalIcon(
+                              onPressed: commandBusy
+                                  ? null
+                                  : () => sendMirrorState(
+                                        MirrorHandState.open,
+                                      ),
+                              icon: const Icon(Icons.pan_tool_outlined),
+                              label: const Text('Abrir mano'),
                             );
-                            final pinZero = FilledButton.tonalIcon(
-                              onPressed: () => widget.ble.emitDemoPin(
-                                DigitalPinState.inactive,
-                              ),
-                              icon: const Icon(Icons.toggle_off_outlined),
-                              label: const Text('Simular pin 0'),
+                            final close = FilledButton.tonalIcon(
+                              onPressed: commandBusy
+                                  ? null
+                                  : () => sendMirrorState(
+                                        MirrorHandState.closed,
+                                      ),
+                              icon: const Icon(Icons.front_hand_outlined),
+                              label: const Text('Cerrar mano'),
                             );
                             if (constraints.maxWidth < 360) {
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  pinOne,
+                                  open,
                                   const SizedBox(height: 8),
-                                  pinZero,
+                                  close,
                                 ],
                               );
                             }
                             return Row(
                               children: [
-                                Expanded(child: pinOne),
+                                Expanded(child: open),
                                 const SizedBox(width: 10),
-                                Expanded(child: pinZero),
+                                Expanded(child: close),
                               ],
                             );
                           },
                         )
                       else
                         const Text(
-                          'Conecta el ESP32 o activa el modo demostración desde el menú Bluetooth.',
+                          'Conecta el dispositivo ANTARA desde el menú Bluetooth.',
                           textAlign: TextAlign.center,
                         ),
                     ],
